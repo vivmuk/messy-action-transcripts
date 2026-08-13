@@ -2,458 +2,513 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>messy-action // terminal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#FEFCF8">
+<title>Messy Action — 100 Days of Field Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0e0a;
-    --bg2: #0d130d;
-    --fg: #b8f5c0;
-    --dim: #5f8f66;
-    --bright: #eaffea;
-    --accent: #00d4aa;
-    --warn: #ffd97a;
-    --err: #ff6b6b;
-    --line: #1c2a1e;
+    --paper: #FEFCF8;
+    --paper-2: #F6F1E7;
+    --ink: #1A1A2E;
+    --teal: #00D4AA;
+    --teal-deep: #00A887;
+    --warm: #FFB454;
+    --clay: #E76F51;
+    --line: rgba(26,26,46,.12);
+    --shadow: 0 14px 40px rgba(26,26,46,.14);
+    --serif: "Fraunces", Georgia, serif;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
   body {
-    background: radial-gradient(ellipse at 50% 0%, #0f1a10 0%, var(--bg) 60%);
-    color: var(--fg);
-    font-family: "SF Mono", "Menlo", "Monaco", "Cascadia Code", "JetBrains Mono", monospace;
-    font-size: 14px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
     line-height: 1.55;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    overflow-x: hidden;
   }
-  #window {
-    width: 100%;
-    max-width: 980px;
-    background: var(--bg2);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    box-shadow: 0 0 0 1px rgba(0,0,0,.6), 0 24px 60px rgba(0,0,0,.55);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 40px);
-    min-height: 480px;
-  }
-  #titlebar {
-    display: flex; align-items: center; gap: 8px;
-    padding: 9px 14px;
-    background: #111a12;
-    border-bottom: 1px solid var(--line);
-    user-select: none;
-  }
-  .dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
-  .dot.r { background: #ff5f56; } .dot.y { background: #ffbd2e; } .dot.g { background: #27c93f; }
-  #title-text { margin-left: 8px; color: var(--dim); font-size: 12.5px; letter-spacing: .5px; flex: 1; }
-  #title-text b { color: var(--accent); font-weight: 600; }
-  #screen {
-    flex: 1; overflow-y: auto; padding: 16px 18px;
+  /* paper texture */
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
     background:
-      repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,.12) 2px 4px);
-    scrollbar-width: thin; scrollbar-color: #2a3a2c #0d130d;
+      radial-gradient(ellipse 90% 60% at 12% -5%, rgba(0,212,170,.10), transparent 55%),
+      radial-gradient(ellipse 80% 55% at 95% 15%, rgba(255,180,84,.10), transparent 50%),
+      repeating-linear-gradient(0deg, transparent 0 2px, rgba(26,26,46,.015) 2px 4px);
   }
-  #screen::-webkit-scrollbar { width: 8px; }
-  #screen::-webkit-scrollbar-thumb { background: #2a3a2c; border-radius: 4px; }
-  .line { white-space: pre-wrap; word-break: break-word; margin: 1px 0; }
-  .line + .line { margin-top: 2px; }
-  .prompt-host { color: var(--accent); font-weight: 700; }
-  .prompt-user { color: var(--dim); }
-  .prompt-sym { color: var(--bright); }
-  .cmd { color: var(--bright); font-weight: 600; }
-  .dim { color: var(--dim); }
-  .accent { color: var(--accent); }
-  .warn { color: var(--warn); }
-  .err { color: var(--err); }
-  .bold { font-weight: 700; color: var(--bright); }
-  .block { margin: 8px 0 12px; padding-left: 14px; border-left: 2px solid #2a3a2c; }
-  .block.accent-b { border-left-color: var(--accent); }
-  table { border-collapse: collapse; width: 100%; margin: 8px 0; }
-  th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line); font-size: 13.5px; vertical-align: top; }
-  th { color: var(--accent); font-weight: 600; border-bottom: 1px solid #2f4532; }
-  tr:hover td { background: rgba(0,212,170,.05); }
-  .epnum { color: var(--warn); font-weight: 700; }
-  .date { color: var(--dim); }
-  .srch-hit { background: rgba(255,217,122,.25); color: var(--warn); border-radius: 2px; padding: 0 1px; }
-  .kbd { border: 1px solid #2f4532; border-radius: 4px; padding: 1px 7px; font-size: 12px; color: var(--dim); background: #111a12; }
-  #inputline { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); background: #0d130d; }
-  #inputline .prompt-host { font-size: 15px; }
-  #cmd { flex: 1; background: transparent; border: none; outline: none; color: var(--bright);
-    font-family: inherit; font-size: 14.5px; caret-color: var(--accent); }
-  #cmd::placeholder { color: #3d5c42; }
-  .cursor { display: inline-block; width: 9px; height: 17px; background: var(--accent); animation: blink 1.1s step-end infinite; vertical-align: text-bottom; }
-  @keyframes blink { 50% { opacity: 0; } }
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .quote { color: var(--warn); font-style: italic; }
-  .tiny { font-size: 12px; color: var(--dim); }
-  .typing::after { content: "▌"; animation: blink 1.1s step-end infinite; color: var(--accent); }
-  @media (max-width: 720px) {
-    body { padding: 8px; }
-    #window { height: calc(100vh - 16px); }
-    #screen { padding: 12px; font-size: 13px; }
-    th, td { padding: 4px 6px; font-size: 12.5px; }
+
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(254,252,248,.85);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav {
+    max-width: 1060px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .nav .logo {
+    font-family: var(--serif); font-weight: 800; font-size: 1.35rem; letter-spacing: -.02em;
+  }
+  .nav .logo .dot { color: var(--teal); }
+  .nav .creator { font-size: .78rem; color: rgba(26,26,46,.55); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .nav .spacer { flex: 1; }
+  .pill {
+    font-size: .78rem; font-weight: 700; letter-spacing: .04em;
+    padding: 6px 12px; border-radius: 999px;
+    border: 1px solid var(--line); background: #fff; color: var(--ink);
+    white-space: nowrap;
+  }
+  .pill.teal { background: var(--teal); border-color: var(--teal); color: #05362c; }
+  .pill.warm { background: var(--warm); border-color: var(--warm); color: #4a2a00; }
+
+  main { max-width: 1060px; margin: 0 auto; padding: 26px 20px 90px; }
+
+  .hero { padding: 18px 0 30px; }
+  .hero .kicker {
+    display: inline-block; font-size: .8rem; font-weight: 700; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--teal-deep); margin-bottom: 10px;
+    background: rgba(0,212,170,.12); padding: 6px 12px; border-radius: 8px;
+  }
+  .hero h1 {
+    font-family: var(--serif); font-weight: 800; font-size: clamp(2.4rem, 7vw, 4.2rem);
+    line-height: 1.02; letter-spacing: -.025em; margin-bottom: 12px;
+  }
+  .hero h1 em { font-style: italic; color: var(--teal-deep); }
+  .hero p.sub { font-size: 1.06rem; color: rgba(26,26,46,.68); max-width: 620px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+  .stat {
+    background: #fff; border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px 18px; box-shadow: 0 4px 14px rgba(26,26,46,.06);
+  }
+  .stat b { font-family: var(--serif); font-size: 1.5rem; display: block; line-height: 1.1; }
+  .stat span { font-size: .76rem; color: rgba(26,26,46,.55); letter-spacing: .05em; text-transform: uppercase; font-weight: 600; }
+
+  section { margin-top: 42px; }
+  .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .sec-head h2 {
+    font-family: var(--serif); font-weight: 700; font-size: 1.7rem; letter-spacing: -.01em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sec-head h2 .tape {
+    width: 34px; height: 12px; background: var(--warm); opacity: .85;
+    border-radius: 2px; transform: rotate(-4deg); box-shadow: 0 2px 4px rgba(0,0,0,.12);
+  }
+  .sec-head .hint { font-size: .82rem; color: rgba(26,26,46,.5); }
+
+  /* weekly infographic strip */
+  .weekly-strip { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 14px; scrollbar-width: thin; }
+  .weekly-strip figure {
+    flex: 0 0 min(78vw, 340px); scroll-snap-align: start;
+    background: #fff; border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
+    box-shadow: var(--shadow); position: relative;
+  }
+  .weekly-strip figure img { width: 100%; display: block; aspect-ratio: 9/16; object-fit: cover; }
+  .weekly-strip figcaption {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(transparent, rgba(26,26,46,.82));
+    color: #fff; padding: 34px 16px 14px; font-size: .86rem; font-weight: 600;
+  }
+
+  /* episode carousel */
+  .carousel-wrap { position: relative; }
+  .carousel {
+    display: flex; gap: 18px; overflow-x: auto; scroll-snap-type: x mandatory;
+    padding: 6px 2px 22px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .carousel::-webkit-scrollbar { display: none; }
+  .card {
+    flex: 0 0 min(84vw, 320px); scroll-snap-align: start; scroll-snap-stop: always;
+    background: #fff; border: 1px solid var(--line); border-radius: 20px; overflow: hidden;
+    box-shadow: var(--shadow); cursor: pointer; position: relative;
+    transition: transform .18s ease, box-shadow .18s ease;
+    display: flex; flex-direction: column;
+  }
+  .card:active { transform: scale(.97); }
+  .card .cover { position: relative; aspect-ratio: 9/14; overflow: hidden; background: var(--paper-2); }
+  .card .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card .cover .fallback {
+    position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 16px; background: linear-gradient(160deg, #0f2a24, #1A1A2E 70%);
+    color: #fff;
+  }
+  .card .cover .ep-badge {
+    position: absolute; top: 12px; left: 12px;
+    background: var(--teal); color: #05362c; font-weight: 800; font-size: .8rem;
+    padding: 6px 11px; border-radius: 999px; letter-spacing: .03em;
+    box-shadow: 0 4px 10px rgba(0,0,0,.25);
+  }
+  .card .cover .date-badge {
+    position: absolute; top: 12px; right: 12px;
+    background: rgba(26,26,46,.72); color: #fff; font-size: .74rem; font-weight: 600;
+    padding: 6px 10px; border-radius: 999px; backdrop-filter: blur(4px);
+  }
+  .card .body { padding: 15px 16px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .card .body h3 { font-family: var(--serif); font-weight: 700; font-size: 1.14rem; line-height: 1.2; letter-spacing: -.01em; }
+  .card .body .msg { font-size: .9rem; color: rgba(26,26,46,.72); }
+  .card .body .quote {
+    font-family: var(--serif); font-style: italic; font-size: .98rem;
+    border-left: 3px solid var(--warm); padding-left: 10px; color: var(--ink);
+  }
+  .card .body .meta { display: flex; gap: 8px; margin-top: auto; align-items: center; flex-wrap: wrap; }
+  .tag {
+    font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    background: rgba(0,212,170,.14); color: var(--teal-deep); padding: 4px 9px; border-radius: 6px;
+  }
+  .dur { font-size: .76rem; color: rgba(26,26,46,.5); font-weight: 600; }
+
+  .arrows { display: flex; gap: 8px; justify-content: flex-end; margin-top: -6px; }
+  .arrow {
+    width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line);
+    background: #fff; color: var(--ink); font-size: 1.1rem; cursor: pointer;
+    display: grid; place-items: center; box-shadow: 0 4px 12px rgba(26,26,46,.08);
+    transition: background .15s, transform .15s;
+  }
+  .arrow:hover { background: var(--teal); color: #05362c; }
+  .arrow:active { transform: scale(.92); }
+
+  /* search */
+  .searchbox {
+    display: flex; align-items: center; gap: 10px;
+    background: #fff; border: 1px solid var(--line); border-radius: 999px;
+    padding: 11px 18px; box-shadow: 0 4px 14px rgba(26,26,46,.06); margin-bottom: 16px;
+  }
+  .searchbox svg { flex: 0 0 auto; opacity: .5; }
+  .searchbox input {
+    flex: 1; border: none; outline: none; font-family: var(--sans); font-size: .98rem;
+    background: transparent; color: var(--ink);
+  }
+  #results { display: none; }
+  .result-item {
+    background: #fff; border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px 18px; margin-bottom: 10px; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(26,26,46,.05); transition: border-color .15s;
+  }
+  .result-item:hover { border-color: var(--teal); }
+  .result-item .rt { font-weight: 700; font-size: .92rem; margin-bottom: 4px; }
+  .result-item .rt .ep-tag { color: var(--teal-deep); margin-right: 8px; }
+  .result-item p { font-size: .88rem; color: rgba(26,26,46,.72); }
+  .result-item mark { background: rgba(255,180,84,.45); border-radius: 3px; padding: 0 2px; }
+  .result-item .words { font-size: .74rem; color: rgba(26,26,46,.45); margin-top: 6px; }
+  .empty {
+    text-align: center; padding: 34px 20px; color: rgba(26,26,46,.5);
+    background: #fff; border: 1px dashed var(--line); border-radius: 16px; font-size: .95rem;
+  }
+
+  /* fullscreen episode view */
+  #modal {
+    position: fixed; inset: 0; z-index: 100; display: none;
+    background: var(--paper); overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  #modal.open { display: block; animation: rise .28s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+  .mv-head {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    background: rgba(254,252,248,.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line);
+  }
+  .mv-head .close {
+    width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: #fff;
+    font-size: 1.05rem; cursor: pointer; display: grid; place-items: center; color: var(--ink);
+  }
+  .mv-head .mv-title { font-weight: 700; font-size: 1rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mv-head a {
+    font-size: .8rem; font-weight: 700; color: var(--teal-deep); text-decoration: none;
+    background: rgba(0,212,170,.12); padding: 7px 13px; border-radius: 999px;
+  }
+  .mv-hero { max-width: 720px; margin: 0 auto; padding: 26px 22px 10px; }
+  .mv-hero .cover {
+    border-radius: 22px; overflow: hidden; box-shadow: var(--shadow);
+    aspect-ratio: 9/16; max-height: 64vh; margin: 0 auto; max-width: 420px;
+    display: block; object-fit: cover; width: 100%;
+  }
+  .mv-hero .noimg {
+    aspect-ratio: 9/16; max-width: 420px; margin: 0 auto; border-radius: 22px;
+    background: linear-gradient(160deg, #0f2a24, #1A1A2E 70%); color: #fff;
+    display: flex; flex-direction: column; justify-content: flex-end; padding: 22px;
+    box-shadow: var(--shadow);
+  }
+  .mv-body { max-width: 720px; margin: 0 auto; padding: 20px 22px 90px; }
+  .mv-body h2 { font-family: var(--serif); font-weight: 800; font-size: 2rem; line-height: 1.08; letter-spacing: -.02em; margin-bottom: 6px; }
+  .mv-meta { font-size: .82rem; color: rgba(26,26,46,.55); font-weight: 600; margin-bottom: 18px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .keycard {
+    background: #fff; border: 1px solid var(--line); border-radius: 16px;
+    padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 6px 18px rgba(26,26,46,.07);
+    position: relative;
+  }
+  .keycard::before {
+    content: ""; position: absolute; top: -7px; left: 22px; width: 62px; height: 15px;
+    background: var(--warm); opacity: .9; border-radius: 2px; transform: rotate(-2deg);
+  }
+  .keycard .lab { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 800; color: var(--teal-deep); margin-bottom: 6px; }
+  .keycard p { font-size: 1.06rem; }
+  .quotecard {
+    font-family: var(--serif); font-style: italic; font-size: 1.3rem; line-height: 1.35;
+    border-left: 4px solid var(--teal); padding: 4px 0 4px 18px; margin: 4px 0 22px; color: var(--ink);
+  }
+  .transcript {
+    background: #fff; border: 1px solid var(--line); border-radius: 16px;
+    padding: 20px; font-size: .95rem; line-height: 1.7;
+    max-height: 480px; overflow-y: auto; box-shadow: 0 6px 18px rgba(26,26,46,.06);
+  }
+  .transcript .seg { margin-bottom: 10px; }
+  .transcript .ts { color: var(--teal-deep); font-size: .78rem; font-weight: 700; margin-right: 8px; }
+  .h-seg {
+    max-width: 720px; margin: 22px auto 10px; padding: 0 22px;
+    font-family: var(--serif); font-weight: 700; font-size: 1.25rem;
+  }
+  .segments { max-width: 720px; margin: 0 auto; padding: 0 22px 60px; }
+  .seg-card {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px;
+    padding: 11px 14px; margin-bottom: 8px; display: grid; grid-template-columns: 58px 1fr; gap: 10px;
+  }
+  .seg-card .t { font-weight: 700; color: var(--teal-deep); font-size: .82rem; padding-top: 2px; }
+  .seg-card p { font-size: .9rem; }
+
+  footer {
+    border-top: 1px solid var(--line); margin-top: 60px;
+    padding: 28px 20px 44px; text-align: center; color: rgba(26,26,46,.5); font-size: .84rem;
+  }
+  footer b { color: var(--ink); }
+  footer .rail { display: inline-flex; align-items: center; gap: 6px; }
+  footer .rail .r { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); display: inline-block; }
+  .hidden { display: none !important; }
+
+  @media (min-width: 800px) {
+    .card { flex-basis: 300px; }
   }
 </style>
 </head>
 <body>
-<div id="window">
-  <div id="titlebar">
-    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-    <div id="title-text"><b>messy-action</b> — @gracebrodeur · 100 Days of Messy Action · transcript archive</div>
+
+<header>
+  <div class="nav">
+    <div class="logo">Messy<span class="dot">•</span>Action</div>
+    <div class="creator">@gracebrodeur</div>
+    <div class="spacer"></div>
+    <span class="pill teal" id="pillCount">— episodes</span>
   </div>
-  <div id="screen" role="log" aria-live="polite"></div>
-  <div id="inputline">
-    <span class="prompt-host">visitor@messy-action</span><span class="prompt-sym">:~$</span>
-    <input id="cmd" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
-           placeholder="type `help` and press enter…" aria-label="terminal input">
+</header>
+
+<main>
+  <div class="hero">
+    <span class="kicker">100 Days of Messy Action</span>
+    <h1>Field notes from<br>a <em>messy</em> action streak</h1>
+    <p class="sub">Daily 60–90 second episodes on procrastination, delusional goals and taking action before you feel ready. Every episode transcribed, indexed and illustrated.</p>
+    <div class="stats">
+      <div class="stat"><b id="statEps">–</b><span>episodes</span></div>
+      <div class="stat"><b id="statWords">–</b><span>words indexed</span></div>
+      <div class="stat"><b id="statDay">–</b><span>day of series</span></div>
+    </div>
   </div>
-</div>
+
+  <div class="searchbox">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input id="search" type="search" placeholder="Search every transcript… try “procrastination”, “feelings”, “goal”" autocomplete="off">
+  </div>
+
+  <section id="weeklySec" class="hidden">
+    <div class="sec-head">
+      <h2><span class="tape"></span>Weekly field notes</h2>
+      <span class="hint">swipe →</span>
+    </div>
+    <div class="weekly-strip" id="weeklyStrip"></div>
+  </section>
+
+  <section id="epsSec">
+    <div class="sec-head">
+      <h2><span class="tape"></span>All episodes</h2>
+      <span class="hint">swipe → or tap to open</span>
+    </div>
+    <div class="carousel-wrap">
+      <div class="carousel" id="carousel"></div>
+    </div>
+    <div class="arrows">
+      <button class="arrow" id="prevBtn" aria-label="previous">←</button>
+      <button class="arrow" id="nextBtn" aria-label="next">→</button>
+    </div>
+  </section>
+
+  <section id="results" aria-live="polite"></section>
+  <div id="empty" class="empty hidden">No episodes loaded yet — check back after the first daily run.</div>
+</main>
+
+<footer>
+  <div class="rail"><span class="r"></span><b>Messy Action Archive</b> &nbsp;·&nbsp; auto-updates daily · deployed on Railway</div>
+  <div style="margin-top:8px">Transcripts &amp; infographics generated with AI · series by @gracebrodeur</div>
+</footer>
+
+<div id="modal"></div>
 
 <script>
-const DB_URL = 'database.json';
-const screen = document.getElementById('screen');
-const cmd = document.getElementById('cmd');
-let DB = null;
-let hist = [];
-let histIdx = -1;
+const $ = s => document.querySelector(s);
+let DB = null, MAN = null;
 
-function el(cls, text) {
-  const d = document.createElement('div');
-  if (cls) d.className = cls;
-  if (text !== undefined) d.textContent = text;
-  return d;
+async function loadAll() {
+  try {
+    const [db, man] = await Promise.all([
+      fetch('database.json').then(r => r.json()),
+      fetch('infographics/manifest.json').then(r => r.json()).catch(() => null)
+    ]);
+    DB = db; MAN = man;
+    render();
+  } catch (e) {
+    $('#empty').classList.remove('hidden');
+    $('#empty').textContent = 'Failed to load archive: ' + e.message;
+  }
 }
 
-function out(line) {
-  if (typeof line === 'string') line = el('line', line);
-  screen.appendChild(line);
-  screen.scrollTop = screen.scrollHeight;
+function esc(s) { return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(d) { if(!d) return ''; const [y,m,dd]=d.split('-'); return new Date(y,m-1,dd).toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function dur(s) { return Math.round(s)+'s'; }
+function imgFor(ep) {
+  if (!MAN || !MAN.dailies) return null;
+  const pref = 'ep' + String(ep.ep).padStart(2,'0');
+  const hit = MAN.dailies.find(f => f.startsWith(pref));
+  return hit ? 'infographics/' + hit : null;
 }
-function hr() { out(el('line dim', '—'.repeat(72))); }
-function spacer() { out(el('line', '')); }
+function seriesDay(dateStr) {
+  if (!DB || !DB.episodes.length) return null;
+  const start = new Date(DB.episodes[0].date + 'T00:00:00');
+  const d = new Date(dateStr + 'T00:00:00');
+  return Math.round((d - start) / 86400000) + 1;
+}
 
-function boot() {
-  out(el('line accent', 'MESSY ACTION — TRANSCRIPT ARCHIVE v1.0'));
-  out(el('line dim', 'series: 100 Days of Messy Action · creator: @gracebrodeur'));
-  out(el('line dim', 'window: 2026-08-06 → 2026-11-15 · auto-updating daily'));
-  spacer();
-  out(el('line', 'initializing database…'));
-  fetch(DB_URL).then(r => r.json()).then(d => {
-    DB = d;
-    out(el('line', `loaded <span class="accent">${d.episodes.length}</span> episodes · <span class="accent">${d.count}</span> total · ${d.episodes.reduce((a,e)=>a+e.transcript.split(/\s+/).length,0).toLocaleString()} words indexed`));
-    spacer();
-    out(el('line', 'type <span class="cmd">help</span> for commands, or just type to search all transcripts.'));
-    out(el('line dim', 'try:  <span class="kbd">list</span>  <span class="kbd">ep 5</span>  <span class="kbd">search procrastination</span>  <span class="kbd">key 6</span>'));
-    spacer();
-    out(el('line dim', '───[ BOOT COMPLETE ]──────────────────────────────────────────'));
-    spacer();
-  }).catch(e => {
-    out(el('line err', `failed to load database: ${e.message}`));
+function render() {
+  const eps = [...DB.episodes].sort((a,b) => a.ep - b.ep);
+  const total = eps.length;
+  const words = eps.reduce((a,e) => a + (e.transcript||'').split(/\s+/).filter(Boolean).length, 0);
+  $('#pillCount').textContent = total === 1 ? '1 episode' : total + ' episodes';
+  $('#statEps').textContent = total;
+  $('#statWords').textContent = words.toLocaleString();
+  $('#statDay').textContent = seriesDay(eps[eps.length-1].date) || '-';
+
+  // weekly strip
+  if (MAN && MAN.weekly && MAN.weekly.length) {
+    $('#weeklySec').classList.remove('hidden');
+    $('#weeklyStrip').innerHTML = MAN.weekly.slice().reverse().map(f =>
+      `<figure><img src="infographics/${f}" alt="Weekly field notes summary" loading="lazy"><figcaption>${f.replace(/weekly-|\.png/g,'').replace(/-/g,' ')}</figcaption></figure>`
+    ).join('');
+  }
+
+  // episode cards
+  $('#carousel').innerHTML = eps.map(e => {
+    const img = imgFor(e);
+    const cover = img
+      ? `<img src="${img}" alt="Episode ${e.ep} infographic" loading="lazy">`
+      : `<div class="fallback"><h3 style="font-family:var(--serif);font-size:1.2rem;line-height:1.15">${esc(e.title)}</h3><div style="font-size:.85rem;opacity:.75;margin-top:6px">${esc(e.key_message)}</div></div>`;
+    return `
+    <article class="card" data-ep="${e.ep}" tabindex="0" role="button" aria-label="Open episode ${e.ep}">
+      <div class="cover">
+        ${cover}
+        <span class="ep-badge">EP ${e.ep}</span>
+        <span class="date-badge">${fmtDate(e.date)}</span>
+      </div>
+      <div class="body">
+        <h3>${esc(e.title)}</h3>
+        <div class="msg">${esc(e.key_message)}</div>
+        <div class="quote">“${esc(e.quote)}”</div>
+        <div class="meta"><span class="tag">${esc(e.tag||'action')}</span><span class="dur">${dur(e.duration_s)}</span></div>
+      </div>
+    </article>`;
+  }).join('');
+
+  // click / keyboard
+  document.querySelectorAll('.card').forEach(c => {
+    c.addEventListener('click', () => openEpisode(+c.dataset.ep));
+    c.addEventListener('keydown', ev => { if (ev.key === 'Enter') openEpisode(+c.dataset.ep); });
   });
 }
 
-function banner() {
-  out(el('line accent', '█▀▄▀█ █▀▀ █▀▀ █▀▀ █▀▀▄   ▄▀▄ █▄ ▄█ █▀▄ █▀▀'));
-  out(el('line accent', '█ ▀ █ █▀▀ ▀▀█ █▀▀ █▄▄▀   █▀█ █ ▀ █ █▀▄ █▀▀'));
-  out(el('line accent', '▀   ▀ ▀▀▀ ▀▀▀ ▀▀▀ ▀ ▀▀▀   ▀ ▀ ▀   ▀ ▀ ▀ ▀▀▀'));
-  spacer();
+function openEpisode(epNum) {
+  const e = DB.episodes.find(x => x.ep === epNum);
+  if (!e) return;
+  const img = imgFor(e);
+  const segs = (e.segments && e.segments.length)
+    ? `<div class="h-seg">Chapter markers</div><div class="segments">${e.segments.map(s =>
+        `<div class="seg-card"><div class="t">${s.t || s.start || ''}</div><p>${esc(s.text || '')}</p></div>`).join('')}</div>`
+    : '';
+  const transcript = e.transcript ? e.transcript.split(/(?<=[.!?])\s+/).map(s =>
+    `<span class="seg">${esc(s)}</span>`).join(' ') : '<p>No transcript yet.</p>';
+  $('#modal').innerHTML = `
+    <div class="mv-head">
+      <button class="close" aria-label="close">✕</button>
+      <div class="mv-title">Episode ${e.ep} · ${fmtDate(e.date)}</div>
+      <a href="https://www.instagram.com/reel/${esc(e.shortcode)}/" target="_blank" rel="noopener">Watch reel ↗</a>
+    </div>
+    <div class="mv-hero">
+      ${img
+        ? `<img class="cover" src="${img}" alt="Episode ${e.ep} infographic">`
+        : `<div class="noimg"><h3 style="font-family:var(--serif);font-size:1.4rem;line-height:1.15">${esc(e.title)}</h3><p style="font-size:.9rem;opacity:.8;margin-top:8px">${esc(e.key_message)}</p></div>`}
+    </div>
+    <div class="mv-body">
+      <h2>${esc(e.title)}</h2>
+      <div class="mv-meta"><span>EP ${e.ep}</span><span>${fmtDate(e.date)}</span><span>${dur(e.duration_s)}</span><span>#${esc(e.tag||'action')}</span></div>
+      <div class="keycard"><div class="lab">Key message</div><p>${esc(e.key_message)}</p></div>
+      <div class="quotecard">“${esc(e.quote)}”</div>
+      <div class="h-seg">Full transcript</div>
+      <div class="transcript">${transcript}</div>
+    </div>
+    ${segs}`;
+  $('#modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  $('#modal').querySelector('.close').addEventListener('click', closeModal);
+  $('#modal').addEventListener('click', ev => { if (ev.target.id === 'modal') closeModal(); });
 }
+function closeModal() { $('#modal').classList.remove('open'); $('#modal').innerHTML=''; document.body.style.overflow=''; }
 
-function fmtDate(d) { const [y,m,dd] = d.split('-'); return `${dd}.${m}.${y}`; }
+// carousel arrows
+$('#nextBtn').addEventListener('click', () => $('#carousel').scrollBy({left: 340, behavior:'smooth'}));
+$('#prevBtn').addEventListener('click', () => $('#carousel').scrollBy({left: -340, behavior:'smooth'}));
 
-function table(eps) {
-  const t = document.createElement('table');
-  const thead = document.createElement('thead');
-  const tr = document.createElement('tr');
-  ['EP','DATE','DUR','TITLE','KEY MESSAGE / QUOTE'].forEach(h => {
-    const th = document.createElement('th'); th.textContent = h; tr.appendChild(th);
-  });
-  thead.appendChild(tr); t.appendChild(thead);
-  const tb = document.createElement('tbody');
-  eps.forEach(e => {
-    const row = document.createElement('tr');
-    const td1 = document.createElement('td'); td1.className = 'epnum'; td1.textContent = e.ep;
-    const td2 = document.createElement('td'); td2.className = 'date'; td2.textContent = fmtDate(e.date);
-    const td3 = document.createElement('td'); td3.className = 'date'; td3.textContent = Math.round(e.duration_s) + 's';
-    const td4 = document.createElement('td');
-    td4.innerHTML = `<span class="bold">${esc(e.title)}</span><div class="tiny">ig.com/reel/${esc(e.shortcode)}</div>`;
-    const td5 = document.createElement('td');
-    td5.innerHTML = `<div>${esc(e.key_message)}</div><div class="quote tiny">“${esc(e.quote)}”</div>`;
-    [td1,td2,td3,td4,td5].forEach(td => row.appendChild(td));
-    tb.appendChild(row);
-  });
-  t.appendChild(tb);
-  return t;
+// search
+let searchTimer;
+$('#search').addEventListener('input', ev => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => doSearch(ev.target.value.trim()), 180);
+});
+function doSearch(q) {
+  const res = $('#results'), emp = $('#empty');
+  emp.classList.add('hidden');
+  if (!q) { res.style.display='none'; res.innerHTML=''; return; }
+  const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const hits = (DB.episodes||[]).map(e => {
+    const hay = (e.transcript + ' ' + e.key_message + ' ' + e.quote + ' ' + e.title).toLowerCase();
+    let score = 0; for (const t of terms) score += hay.split(t).length - 1;
+    return { e, score };
+  }).filter(x => x.score > 0).sort((a,b) => b.score - a.score).slice(0, 12);
+  res.style.display = hits.length ? 'block' : 'block';
+  res.innerHTML = hits.length
+    ? hits.map(({e}) => {
+        const snippet = snippetFor(e, terms);
+        return `<div class="result-item" data-ep="${e.ep}">
+          <div class="rt"><span class="ep-tag">EP ${e.ep} · ${fmtDate(e.date)}</span>${esc(e.title)}</div>
+          <p>${snippet}</p>
+          <div class="words">${(e.transcript||'').split(/\s+/).filter(Boolean).length.toLocaleString()} words · ${e.key_message}</div>
+        </div>`;
+      }).join('')
+    : `<div class="empty">No matches for “<b>${esc(q)}</b>”. Try another word.</div>`;
+  res.querySelectorAll('.result-item').forEach(el => el.addEventListener('click', () => openEpisode(+el.dataset.ep)));
 }
-
-function esc(s) { return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-
-function highlight(text, terms) {
-  let s = esc(text);
-  terms.forEach(t => {
-    if (!t) return;
-    const re = new RegExp(`(${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    s = s.replace(re, '<span class="srch-hit">$1</span>');
-  });
+function snippetFor(e, terms) {
+  const t = e.transcript || '';
+  let best = -1, bestI = 0;
+  for (const term of terms) { const i = t.toLowerCase().indexOf(term); if (i > best) { best = i; bestI = i; } }
+  if (bestI < 0) return esc(t.slice(0, 200)) + '…';
+  const start = Math.max(0, bestI - 90), end = Math.min(t.length, bestI + 190);
+  let s = esc(t.slice(start, end));
+  if (start > 0) s = '…' + s;
+  if (end < t.length) s += '…';
+  terms.forEach(term => { s = s.replace(new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<mark>$1</mark>'); });
   return s;
 }
 
-function showEp(ep) {
-  banner();
-  spacer();
-  out(el('line', `<span class="epnum">EPISODE ${ep.ep}</span> · <span class="bold">${esc(ep.title)}</span>`));
-  out(el('line dim', `date: ${fmtDate(ep.date)} · duration: ${Math.round(ep.duration_s)}s · code: ${ep.shortcode} · ig.com/reel/${ep.shortcode}`));
-  spacer();
-  const b = el('div block accent-b');
-  b.innerHTML = `<span class="accent bold">KEY MESSAGE</span>\n${esc(ep.key_message)}\n\n<span class="warn bold">QUOTE</span>\n<span class="quote">“${esc(ep.quote)}”</span>`;
-  out(b);
-  spacer();
-  const tb = el('div block');
-  tb.innerHTML = `<span class="accent bold">FULL TRANSCRIPT (${ep.transcript.split(/\s+/).length} words)</span>`;
-  out(tb);
-  // print transcript in readable chunks with timestamps from segments if present
-  if (ep.segments && ep.segments.length) {
-    ep.segments.forEach(s => {
-      const l = el('line');
-      l.innerHTML = `<span class="dim">[${fmtTs(s.start)}]</span> ${esc(s.text)}`;
-      out(l);
-    });
-  } else {
-    out(el('line', ep.transcript));
-  }
-  spacer();
-  out(el('line tiny', `-- ep ${ep.ep} of ${DB.episodes.length} · type "list" to go back --`));
-}
-
-function fmtTs(sec) {
-  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
-  return `${String(m).padStart(1,'0')}:${String(s).padStart(2,'0')}`;
-}
-
-function search(terms) {
-  const q = terms.join(' ').toLowerCase();
-  const eps = DB.episodes;
-  const results = [];
-  eps.forEach(e => {
-    const hay = (e.transcript + ' ' + e.key_message + ' ' + e.title).toLowerCase();
-    let idx = 0, count = 0;
-    while ((idx = hay.indexOf(q, idx)) !== -1) { count++; idx += q.length; }
-    if (count) results.push({ep: e, count});
-  });
-  results.sort((a,b) => b.count - a.count);
-  return results;
-}
-
-function cmdHelp() {
-  banner();
-  out(el('line bold accent', 'AVAILABLE COMMANDS'));
-  spacer();
-  const rows = [
-    ['help', 'show this help'],
-    ['list', 'list all episodes (table)'],
-    ['ep <n>', 'open episode n: key message + full transcript'],
-    ['search <terms>', 'full-text search across all transcripts'],
-    ['key [n]', 'daily key message for episode n (default newest)'],
-    ['procrastination', 'quick: every procrastination key message'],
-    ['quotes', 'all episode quotes'],
-    ['stats', 'database stats'],
-    ['about', 'about this archive'],
-    ['clear', 'clear screen'],
-    ['exit', 'show a joke (you cannot leave)'],
-  ];
-  const t = document.createElement('table');
-  rows.forEach(([c,d]) => {
-    const tr = document.createElement('tr');
-    const td1 = document.createElement('td'); td1.innerHTML = `<span class="accent">${c}</span>`;
-    const td2 = document.createElement('td'); td2.textContent = d;
-    tr.appendChild(td1); tr.appendChild(td2); t.appendChild(tr);
-  });
-  out(t);
-  spacer();
-  out(el('line dim', 'you can also just type a query — it becomes a full-text search.'));
-}
-
-function cmdList() {
-  out(el('line', `<span class="accent bold">${DB.episodes.length} EPISODES</span> · 100 Days of Messy Action · @gracebrodeur`));
-  hr();
-  out(table(DB.episodes));
-  out(el('line tiny', `-- type "ep N" for full transcript, "search <q>" for full-text --`));
-}
-
-function cmdKey(n) {
-  const eps = DB.episodes;
-  const ep = (n === null || n === undefined) ? eps[eps.length-1] : eps.find(e => e.ep === n);
-  if (!ep) { out(el('line err', `episode ${n} not found (0-${eps.length-1})`)); return; }
-  const b = el('div block accent-b');
-  b.innerHTML = `<span class="dim">${fmtDate(ep.date)}</span> · <span class="epnum">EP ${ep.ep}</span> — <span class="bold">${esc(ep.title)}</span>\n\n<span class="accent bold">KEY MESSAGE</span>\n${esc(ep.key_message)}\n\n<span class="warn bold">QUOTE</span>\n<span class="quote">“${esc(ep.quote)}”</span>`;
-  out(b);
-}
-
-function cmdP() {
-  out(el('line', '<span class="accent bold">PROCRASTINATION — ALL EPISODES</span>'));
-  hr();
-  const eps = DB.episodes.filter(e => e.tag === 'procrastination');
-  if (!eps.length) { out(el('line dim','no episodes tagged')); return; }
-  eps.forEach(e => cmdKey(e.ep));
-}
-
-function cmdQuotes() {
-  out(el('line', '<span class="accent bold">QUOTES</span>'));
-  hr();
-  DB.episodes.forEach(e => {
-    const l = el('line');
-    l.innerHTML = `<span class="epnum">EP${e.ep}</span> <span class="date">${fmtDate(e.date)}</span>  <span class="quote">“${esc(e.quote)}”</span>`;
-    out(l);
-  });
-}
-
-function cmdStats() {
-  const eps = DB.episodes;
-  const totalWords = eps.reduce((a,e) => a + e.transcript.split(/\s+/).length, 0);
-  const totalSec = eps.reduce((a,e) => a + e.duration_s, 0);
-  out(el('line', `<span class="accent bold">DATABASE STATS</span>`));
-  hr();
-  [
-    ['episodes', eps.length],
-    ['total runtime', Math.round(totalSec/60) + ' min'],
-    ['total words', totalWords.toLocaleString()],
-    ['avg words/ep', Math.round(totalWords/eps.length).toLocaleString()],
-    ['tags', [...new Set(eps.map(e=>e.tag))].join(', ')],
-    ['generated', DB.generated],
-    ['source', '@gracebrodeur · instagram'],
-  ].forEach(([k,v]) => {
-    const l = el('line'); l.innerHTML = `<span class="accent">${k.padEnd(16)}</span>${esc(String(v))}`; out(l);
-  });
-  hr();
-}
-
-function cmdAbout() {
-  out(el('line bold', '100 DAYS OF MESSY ACTION — ARCHIVE'));
-  out(el('line', 'Daily public experiment by Grace Brodeur (@gracebrodeur): can you hit a'));
-  out(el('line', 'delusional goal by training your brain to believe it is possible and'));
-  out(el('line', 'taking messy action before you feel ready?'));
-  spacer();
-  out(el('line dim', '2021 track record: $1.7M business teaching procrastination recovery,'));
-  out(el('line dim', '$100K in 9 months from a delusional goal, now aiming for 1M helped.'));
-  spacer();
-  out(el('line dim', 'This archive auto-ingests each day\'s episode: video → audio → transcript →'));
-  out(el('line dim', 'key message → database. Built by Paridhi for Vivek.'));
-}
-
-function runCommand(raw) {
-  const line = el('line');
-  line.innerHTML = `<span class="prompt-host">visitor@messy-action</span><span class="prompt-sym">:~$</span> <span class="cmd">${esc(raw)}</span>`;
-  out(line);
-  const parts = raw.trim().split(/\s+/);
-  const c = (parts[0]||'').toLowerCase();
-  const args = parts.slice(1);
-
-  if (!DB) {
-    if (c === 'help' || c === 'clear') { /* allow */ }
-    else { out(el('line err', 'database still loading… try again in a second.')); return; }
-  }
-
-  switch (c) {
-    case 'help': cmdHelp(); break;
-    case 'list': case 'ls': case 'videos': cmdList(); break;
-    case 'ep': {
-      const n = parseInt(args[0], 10);
-      if (isNaN(n)) { out(el('line err', 'usage: ep <number>')); break; }
-      const ep = DB.episodes.find(e => e.ep === n);
-      if (!ep) out(el('line err', `episode ${n} not found. try: list`));
-      else showEp(ep);
-      break;
-    }
-    case 'search': case 'find': case 'grep': {
-      if (!args.length) { out(el('line err', 'usage: search <terms>')); break; }
-      const results = search(args);
-      if (!results.length) { out(el('line warn', `no matches for "${args.join(' ')}"`)); break; }
-      out(el('line', `<span class="accent bold">${results.length} EPISODE(S)</span> match "<span class="warn">${esc(args.join(' '))}</span>"`));
-      hr();
-      results.forEach(r => {
-        const b = el('div block');
-        const idx = r.ep.transcript.toLowerCase().indexOf(args.join(' ').toLowerCase());
-        const start = Math.max(0, idx - 90);
-        let excerpt = r.ep.transcript.slice(start, idx + 160);
-        if (start > 0) excerpt = '…' + excerpt;
-        b.innerHTML = `<span class="epnum">EP ${r.ep.ep}</span> <span class="date">${fmtDate(r.ep.date)}</span> · <span class="bold">${esc(r.ep.title)}</span> · <span class="dim">${r.count} hit(s)</span>\n<span class="dim">${highlight(excerpt, args)}</span>`;
-        b.addEventListener('click', () => { cmd.value = `ep ${r.ep.ep}`; runCommand(cmd.value); });
-        b.style.cursor = 'pointer';
-        out(b);
-      });
-      hr();
-      out(el('line tiny', '-- click a result to open the episode --'));
-      break;
-    }
-    case 'key': case 'message': case 'daily': {
-      const n = args.length ? parseInt(args[0],10) : null;
-      cmdKey(isNaN(n) ? null : n);
-      break;
-    }
-    case 'procrastination': case 'proc': cmdP(); break;
-    case 'quotes': case 'quote': cmdQuotes(); break;
-    case 'stats': case 'db': cmdStats(); break;
-    case 'about': cmdAbout(); break;
-    case 'clear': case 'cls': screen.innerHTML = ''; break;
-    case 'exit': case 'quit': out(el('line warn', 'nice try. there is no exit from messy action.')); break;
-    case 'banner': banner(); break;
-    case '': break;
-    default: {
-      // implicit full-text search
-      const results = search(parts);
-      if (!results.length) { out(el('line err', `command not found: ${c} — type "help". (no transcript matches either)`)); break; }
-      out(el('line dim', `(implicit search: "${esc(raw)}")`));
-      const r0 = results[0];
-      out(el('line', `<span class="accent bold">${results.length} episode(s)</span> match — top: <span class="epnum">EP ${r0.ep.ep}</span> <span class="bold">${esc(r0.ep.title)}</span> (${r0.count} hits)`));
-      hr();
-      results.slice(0, 5).forEach(r => {
-        const idx = r.ep.transcript.toLowerCase().indexOf(parts.join(' ').toLowerCase());
-        const start = Math.max(0, idx - 80);
-        let excerpt = r.ep.transcript.slice(start, idx + 140);
-        if (start > 0) excerpt = '…' + excerpt;
-        const l = el('line');
-        l.innerHTML = `<span class="epnum">EP ${r.ep.ep}</span> <span class="dim">${highlight(excerpt, parts)}</span>`;
-        out(l);
-      });
-      hr();
-      out(el('line tiny', '-- type "ep N" to open, "search <q>" for details --'));
-    }
-  }
-  spacer();
-  screen.scrollTop = screen.scrollHeight;
-}
-
-cmd.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    const raw = cmd.value;
-    if (!raw.trim()) return;
-    hist.push(raw); histIdx = hist.length;
-    cmd.value = '';
-    runCommand(raw);
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    if (histIdx > 0) { histIdx--; cmd.value = hist[histIdx]; }
-  } else if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    if (histIdx < hist.length - 1) { histIdx++; cmd.value = hist[histIdx]; }
-    else { histIdx = hist.length; cmd.value = ''; }
-  }
-});
-
-cmd.addEventListener('keyup', () => {
-  cmd.style.width = 'auto';
-});
-
-boot();
-setTimeout(() => cmd.focus(), 400);
-window.addEventListener('click', () => cmd.focus());
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') closeModal(); });
+loadAll();
 </script>
 </body>
 </html>

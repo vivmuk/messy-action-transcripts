@@ -1,0 +1,4 @@
+# local OS noise only — content (database.json, infographics/) stays tracked:
+# it's the deploy payload and the whole point of this repo.
+.DS_Store
+*.log
