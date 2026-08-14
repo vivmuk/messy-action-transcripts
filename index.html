@@ -322,7 +322,7 @@
   <section id="epsSec">
     <div class="sec-head">
       <h2><span class="tape"></span>All episodes</h2>
-      <span class="hint">swipe → or tap to open</span>
+      <span class="hint">tap the arrows to flip through →</span>
     </div>
     <div class="carousel-wrap">
       <div class="carousel" id="carousel"></div>
@@ -379,13 +379,13 @@ function seriesDay(dateStr) {
 }
 
 function render() {
-  const eps = [...DB.episodes].sort((a,b) => a.ep - b.ep);
+  const eps = [...DB.episodes].sort((a,b) => b.ep - a.ep); // newest first
   const total = eps.length;
   const words = eps.reduce((a,e) => a + (e.transcript||'').split(/\s+/).filter(Boolean).length, 0);
   $('#pillCount').textContent = total === 1 ? '1 episode' : total + ' episodes';
   $('#statEps').textContent = total;
   $('#statWords').textContent = words.toLocaleString();
-  $('#statDay').textContent = seriesDay(eps[eps.length-1].date) || '-';
+  $('#statDay').textContent = seriesDay(eps[0].date) || '-';
 
   // weekly strip
   if (MAN && MAN.weekly && MAN.weekly.length) {
@@ -461,9 +461,22 @@ function openEpisode(epNum) {
 }
 function closeModal() { $('#modal').classList.remove('open'); $('#modal').innerHTML=''; document.body.style.overflow=''; }
 
-// carousel arrows
-$('#nextBtn').addEventListener('click', () => $('#carousel').scrollBy({left: 340, behavior:'smooth'}));
-$('#prevBtn').addEventListener('click', () => $('#carousel').scrollBy({left: -340, behavior:'smooth'}));
+// carousel arrows — flip one episode at a time (snaps to card)
+function stepCarousel(dir) {
+  const car = $('#carousel');
+  const cards = [...car.querySelectorAll('.card')];
+  if (!cards.length) return;
+  const center = car.scrollLeft + car.clientWidth / 2;
+  let idx = 0, best = Infinity;
+  cards.forEach((c, i) => {
+    const d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - center);
+    if (d < best) { best = d; idx = i; }
+  });
+  const target = Math.min(cards.length - 1, Math.max(0, idx + dir));
+  cards[target].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+}
+$('#nextBtn').addEventListener('click', () => stepCarousel(1));
+$('#prevBtn').addEventListener('click', () => stepCarousel(-1));
 
 // search
 let searchTimer;
