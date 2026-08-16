@@ -350,9 +350,14 @@ let DB = null, MAN = null;
 
 async function loadAll() {
   try {
+    // Cache-bust the data + manifest fetches: some browsers/proxies keep serving
+    // a stored database.json even after Cache-Control:no-store, which made a new
+    // episode invisible (the "still ep8" bug). A unique query kills that class
+    // of staleness entirely.
+    const V = Date.now();
     const [db, man] = await Promise.all([
-      fetch('database.json').then(r => r.json()),
-      fetch('infographics/manifest.json').then(r => r.json()).catch(() => null)
+      fetch('database.json?v=' + V).then(r => r.json()),
+      fetch('infographics/manifest.json?v=' + V).then(r => r.json()).catch(() => null)
     ]);
     DB = db; MAN = man;
     render();
@@ -369,7 +374,11 @@ function imgFor(ep) {
   if (!MAN || !MAN.dailies) return null;
   const pref = 'ep' + String(ep.ep).padStart(2,'0');
   const hit = MAN.dailies.find(f => f.startsWith(pref));
-  return hit ? 'infographics/' + hit : null;
+  if (!hit) return null;
+  // bust image caches via the manifest's generated timestamp: images only
+  // change when the manifest is rewritten, so this re-fetches exactly then.
+  const v = (MAN && MAN.generated) ? '?v=' + encodeURIComponent(MAN.generated) : '';
+  return 'infographics/' + hit + v;
 }
 function seriesDay(dateStr) {
   if (!DB || !DB.episodes.length) return null;
@@ -390,8 +399,9 @@ function render() {
   // weekly strip
   if (MAN && MAN.weekly && MAN.weekly.length) {
     $('#weeklySec').classList.remove('hidden');
+    const wv = '?v=' + encodeURIComponent(MAN.generated || Date.now());
     $('#weeklyStrip').innerHTML = MAN.weekly.slice().reverse().map(f =>
-      `<figure><img src="infographics/${f}" alt="Weekly field notes summary" loading="lazy"><figcaption>${f.replace(/weekly-|\.png/g,'').replace(/-/g,' ')}</figcaption></figure>`
+      `<figure><img src="infographics/${f}${wv}" alt="Weekly field notes summary" loading="lazy"><figcaption>${f.replace(/weekly-|\.png/g,'').replace(/-/g,' ')}</figcaption></figure>`
     ).join('');
   }
 
