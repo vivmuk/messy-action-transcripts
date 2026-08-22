@@ -405,9 +405,12 @@ function render() {
     ).join('');
   }
 
-  // episode cards
-  $('#carousel').innerHTML = eps.map(e => {
-    const img = imgFor(e);
+  // episode cards — only the NEWEST 5 get their image downloaded up front.
+  // Older cards render a text fallback; the infographic swaps in on demand
+  // (card click or arrow flip), so opening the site never pulls ~100MB of PNGs.
+  const LATEST_IMAGES = 5;
+  $('#carousel').innerHTML = eps.map((e, i) => {
+    const img = (i < LATEST_IMAGES) ? imgFor(e) : null;
     const cover = img
       ? `<img src="${img}" alt="Episode ${e.ep} infographic" loading="lazy">`
       : `<div class="fallback"><h3 style="font-family:var(--serif);font-size:1.2rem;line-height:1.15">${esc(e.title)}</h3><div style="font-size:.85rem;opacity:.75;margin-top:6px">${esc(e.key_message)}</div></div>`;
@@ -429,9 +432,27 @@ function render() {
 
   // click / keyboard
   document.querySelectorAll('.card').forEach(c => {
-    c.addEventListener('click', () => openEpisode(+c.dataset.ep));
-    c.addEventListener('keydown', ev => { if (ev.key === 'Enter') openEpisode(+c.dataset.ep); });
+    c.addEventListener('click', () => { loadCardImage(+c.dataset.ep); openEpisode(+c.dataset.ep); });
+    c.addEventListener('keydown', ev => { if (ev.key === 'Enter') { loadCardImage(+c.dataset.ep); openEpisode(+c.dataset.ep); } });
   });
+}
+
+// Swap an old card's text fallback for its real infographic the first time the
+// user actually looks at it. Cached afterwards by the browser (images now serve
+// with Cache-Control: public, max-age=86400).
+const cardImgLoaded = new Set();
+function loadCardImage(epNum) {
+  if (cardImgLoaded.has(epNum)) return;
+  cardImgLoaded.add(epNum);
+  const card = document.querySelector(`.card[data-ep="${epNum}"]`);
+  const img = imgFor(DB.episodes.find(x => x.ep === epNum));
+  if (!card || !img) return;
+  const cover = card.querySelector('.cover');
+  const fb = cover.querySelector('.fallback');
+  if (fb) fb.remove();
+  const el = new Image();
+  el.src = img; el.alt = `Episode ${epNum} infographic`; el.loading = 'eager';
+  cover.prepend(el);
 }
 
 function openEpisode(epNum) {
@@ -484,6 +505,8 @@ function stepCarousel(dir) {
   });
   const target = Math.min(cards.length - 1, Math.max(0, idx + dir));
   cards[target].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  // fetch this card's infographic only when it becomes the focused one
+  loadCardImage(+cards[target].dataset.ep);
 }
 $('#nextBtn').addEventListener('click', () => stepCarousel(1));
 $('#prevBtn').addEventListener('click', () => stepCarousel(-1));

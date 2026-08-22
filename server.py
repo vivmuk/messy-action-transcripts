@@ -13,12 +13,16 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 class Handler(SimpleHTTPRequestHandler):
     def end_headers(self):
+        # JSON: always no-store (fresh data on every visit — new episodes appear instantly)
         if self.path.split("?", 1)[0].lower().endswith(".json"):
             self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
             self.send_header("Pragma", "no-cache")
             self.send_header("Expires", "0")
         else:
-            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+            # Images/audio/html: cacheable for a day, stale-while-revalidate.
+            # Filenames are content-addressed via the manifest's ?v=<generated> bust,
+            # so a regenerated image gets a new URL and bypasses this cache anyway.
+            self.send_header("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800")
         super().end_headers()
 
 def main():
