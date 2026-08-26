@@ -114,15 +114,14 @@
     color: #fff; padding: 34px 16px 14px; font-size: .86rem; font-weight: 600;
   }
 
-  /* episode carousel */
+  /* episode carousel (paginated: 2 episodes per page) */
   .carousel-wrap { position: relative; }
   .carousel {
-    display: flex; gap: 18px; overflow-x: auto; scroll-snap-type: x mandatory;
-    padding: 6px 2px 22px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px;
+    padding: 6px 2px 22px;
   }
-  .carousel::-webkit-scrollbar { display: none; }
   .card {
-    flex: 0 0 min(84vw, 320px); scroll-snap-align: start; scroll-snap-stop: always;
+    min-width: 0;
     background: #fff; border: 1px solid var(--line); border-radius: 20px; overflow: hidden;
     box-shadow: var(--shadow); cursor: pointer; position: relative;
     transition: transform .18s ease, box-shadow .18s ease;
@@ -161,7 +160,8 @@
   }
   .dur { font-size: .76rem; color: rgba(26,26,46,.5); font-weight: 600; }
 
-  .arrows { display: flex; gap: 8px; justify-content: flex-end; margin-top: -6px; }
+  .arrows { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin-top: -6px; }
+  .pagecount { font-size: .82rem; color: rgba(26,26,46,.5); font-weight: 600; margin-right: auto; }
   .arrow {
     width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line);
     background: #fff; color: var(--ink); font-size: 1.1rem; cursor: pointer;
@@ -170,6 +170,8 @@
   }
   .arrow:hover { background: var(--teal); color: #05362c; }
   .arrow:active { transform: scale(.92); }
+  .arrow:disabled { opacity: .32; cursor: default; pointer-events: none; }
+  .arrow:disabled:hover { background: #fff; color: var(--ink); }
 
   /* search */
   .searchbox {
@@ -313,13 +315,14 @@
 
   <section id="epsSec">
     <div class="sec-head">
-      <h2><span class="tape"></span>All episodes</h2>
-      <span class="hint">tap the arrows to flip through →</span>
+      <h2><span class="tape"></span>Recent episodes</h2>
+      <span class="hint">showing the 2 latest · use ← → (or swipe) for older days</span>
     </div>
     <div class="carousel-wrap">
       <div class="carousel" id="carousel"></div>
     </div>
     <div class="arrows">
+      <span class="pagecount" id="pagecount">–</span>
       <button class="arrow" id="prevBtn" aria-label="previous">←</button>
       <button class="arrow" id="nextBtn" aria-label="next">→</button>
     </div>
@@ -407,34 +410,9 @@ function render() {
 
   // episode cards — only the NEWEST 5 get their image downloaded up front.
   // Older cards render a text fallback; the infographic swaps in on demand
-  // (card click or arrow flip), so opening the site never pulls ~100MB of PNGs.
-  const LATEST_IMAGES = 5;
-  $('#carousel').innerHTML = eps.map((e, i) => {
-    const img = (i < LATEST_IMAGES) ? imgFor(e) : null;
-    const cover = img
-      ? `<img src="${img}" alt="Episode ${e.ep} infographic" loading="lazy">`
-      : `<div class="fallback"><h3 style="font-family:var(--serif);font-size:1.2rem;line-height:1.15">${esc(e.title)}</h3><div style="font-size:.85rem;opacity:.75;margin-top:6px">${esc(e.key_message)}</div></div>`;
-    return `
-    <article class="card" data-ep="${e.ep}" tabindex="0" role="button" aria-label="Open episode ${e.ep}">
-      <div class="cover">
-        ${cover}
-        <span class="ep-badge">EP ${e.ep}</span>
-        <span class="date-badge">${fmtDate(e.date)}</span>
-      </div>
-      <div class="body">
-        <h3>${esc(e.title)}</h3>
-        <div class="msg">${esc(e.key_message)}</div>
-        <div class="quote">“${esc(e.quote)}”</div>
-        <div class="meta"><span class="tag">${esc(e.tag||'action')}</span><span class="dur">${dur(e.duration_s)}</span></div>
-      </div>
-    </article>`;
-  }).join('');
-
-  // click / keyboard
-  document.querySelectorAll('.card').forEach(c => {
-    c.addEventListener('click', () => { loadCardImage(+c.dataset.ep); openEpisode(+c.dataset.ep); });
-    c.addEventListener('keydown', ev => { if (ev.key === 'Enter') { loadCardImage(+c.dataset.ep); openEpisode(+c.dataset.ep); } });
-  });
+  epsAll = eps;
+  curPage = Math.min(curPage, Math.max(0, totalPages() - 1));
+  renderCarousel();
 }
 
 // Swap an old card's text fallback for its real infographic the first time the
@@ -492,24 +470,69 @@ function openEpisode(epNum) {
 }
 function closeModal() { $('#modal').classList.remove('open'); $('#modal').innerHTML=''; document.body.style.overflow=''; }
 
-// carousel arrows — flip one episode at a time (snaps to card)
-function stepCarousel(dir) {
+// --- paginated carousel: 2 episodes per page, newest first ---
+const PAGE_SIZE = 2;
+let epsAll = [];   // newest-first
+let curPage = 0;
+
+function totalPages() { return Math.max(1, Math.ceil(epsAll.length / PAGE_SIZE)); }
+
+function cardFor(e) {
+  // only 2 cards are ever rendered, so always attach the infographic directly
+  const img = imgFor(e);
+  const cover = img
+    ? `<img src="${img}" alt="Episode ${e.ep} infographic" loading="lazy">`
+    : `<div class="fallback"><h3 style="font-family:var(--serif);font-size:1.2rem;line-height:1.15">${esc(e.title)}</h3><div style="font-size:.85rem;opacity:.75;margin-top:6px">${esc(e.key_message)}</div></div>`;
+  return `
+    <article class="card" data-ep="${e.ep}" tabindex="0" role="button" aria-label="Open episode ${e.ep}">
+      <div class="cover">
+        ${cover}
+        <span class="ep-badge">EP ${e.ep}</span>
+        <span class="date-badge">${fmtDate(e.date)}</span>
+      </div>
+      <div class="body">
+        <h3>${esc(e.title)}</h3>
+        <div class="msg">${esc(e.key_message)}</div>
+        <div class="quote">“${esc(e.quote)}”</div>
+        <div class="meta"><span class="tag">${esc(e.tag||'action')}</span><span class="dur">${dur(e.duration_s)}</span></div>
+      </div>
+    </article>`;
+}
+
+function renderCarousel() {
   const car = $('#carousel');
-  const cards = [...car.querySelectorAll('.card')];
-  if (!cards.length) return;
-  const center = car.scrollLeft + car.clientWidth / 2;
-  let idx = 0, best = Infinity;
-  cards.forEach((c, i) => {
-    const d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - center);
-    if (d < best) { best = d; idx = i; }
+  const start = curPage * PAGE_SIZE;
+  car.innerHTML = epsAll.slice(start, start + PAGE_SIZE).map(cardFor).join('');
+
+  const pc = $('#pagecount');
+  if (pc) pc.textContent = (curPage + 1) + ' / ' + totalPages();
+  const prev = $('#prevBtn'), next = $('#nextBtn');
+  if (prev) prev.disabled = curPage === 0;
+  if (next) next.disabled = curPage >= totalPages() - 1;
+
+  car.querySelectorAll('.card').forEach(c => {
+    c.addEventListener('click', () => { loadCardImage(+c.dataset.ep); openEpisode(+c.dataset.ep); });
+    c.addEventListener('keydown', ev => { if (ev.key === 'Enter') { loadCardImage(+c.dataset.ep); openEpisode(+c.dataset.ep); } });
   });
-  const target = Math.min(cards.length - 1, Math.max(0, idx + dir));
-  cards[target].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  // fetch this card's infographic only when it becomes the focused one
-  loadCardImage(+cards[target].dataset.ep);
+}
+
+function stepCarousel(dir) {
+  curPage = Math.min(totalPages() - 1, Math.max(0, curPage + dir));
+  renderCarousel();
 }
 $('#nextBtn').addEventListener('click', () => stepCarousel(1));
 $('#prevBtn').addEventListener('click', () => stepCarousel(-1));
+
+// touch swipe: left = older days, right = newer days
+let _tX = null;
+const _carEl = $('#carousel');
+_carEl.addEventListener('touchstart', ev => { _tX = ev.touches[0].clientX; }, { passive: true });
+_carEl.addEventListener('touchend', ev => {
+  if (_tX === null) return;
+  const dx = ev.changedTouches[0].clientX - _tX;
+  if (Math.abs(dx) > 48) stepCarousel(dx < 0 ? 1 : -1);
+  _tX = null;
+}, { passive: true });
 
 // search
 let searchTimer;
