@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#FEFCF8">
-<title>Messy Action — 100 Days of Field Notes</title>
+<title>Gallery — Messy Action</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -17,49 +17,21 @@
     <a class="logo" href="index.html">Messy<span class="dot">•</span>Action</a>
     <div class="creator">by <a href="https://www.instagram.com/gracebrodeur/" target="_blank" rel="noopener">@gracebrodeur</a></div>
     <div class="spacer"></div>
-    <a class="pill active" href="index.html">Home</a>
-    <a class="pill" href="gallery.html">Gallery</a>
+    <a class="pill" href="index.html">Home</a>
+    <a class="pill active" href="gallery.html">Gallery</a>
     <a class="pill teal" href="https://www.instagram.com/gracebrodeur/" target="_blank" rel="noopener">Instagram ↗</a>
     <span class="pill teal" id="pillCount">— episodes</span>
   </div>
 </header>
 
 <main>
-  <!-- HERO SECTION: Single day card view with swipe/nav -->
-  <div class="hero-section">
-    <span class="hero-kicker">100 Days of Messy Action</span>
-    <h1 class="hero-title">Field notes from a <em>messy action</em> streak</h1>
-    <p class="hero-sub">Daily 60–90s episodes on taking action before you feel ready. Click any card to inspect full visual notes.</p>
-
-    <div class="hero-card-stage" id="heroStage">
-      <!-- Active Hero Card rendered by JS -->
+  <!-- ALL DAYS GALLERY -->
+  <section id="gallerySec">
+    <div class="section-head" style="margin-top:20px;">
+      <h2><span class="tape"></span>All Days Gallery</h2>
+      <p>Browse the complete archive of visual field notes and key takeaways.</p>
     </div>
-
-    <div class="hero-nav">
-      <button class="hero-nav-btn" id="prevHeroBtn" aria-label="Previous (newer day)">←</button>
-      <span class="hero-indicator" id="heroIndicator">Day 20 / 20</span>
-      <button class="hero-nav-btn" id="nextHeroBtn" aria-label="Next (older day)">→</button>
-    </div>
-
-    <div class="stats-row">
-      <div class="stat-badge"><b id="statEps">–</b> episodes</div>
-      <div class="stat-badge"><b id="statWords">–</b> words transcribed</div>
-      <div class="stat-badge"><b id="statDay">–</b> days active</div>
-    </div>
-  </div>
-
-  <div class="searchbox">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-    <input id="search" type="search" placeholder="Search field notes & transcripts… e.g. “procrastination”" autocomplete="off">
-  </div>
-
-  <section id="results" aria-live="polite"></section>
-
-  <!-- GALLERY CTA -->
-  <section class="gallery-cta">
-    <h2>Browse the full archive</h2>
-    <p>Every day of visual field notes, key takeaways, and full transcripts in one place.</p>
-    <a class="cta-btn" href="gallery.html">Open Gallery →</a>
+    <div class="gallery-grid" id="galleryGrid"></div>
   </section>
 </main>
 
