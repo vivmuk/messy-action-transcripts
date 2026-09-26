@@ -2,8 +2,8 @@
   "series": "100 Days of Messy Action",
   "creator": "@gracebrodeur",
   "url": "https://www.instagram.com/gracebrodeur/",
-  "generated": "2026-09-23T22:08:43",
-  "count": 35,
+  "generated": "2026-09-26T06:05:56",
+  "count": 36,
   "episodes": [
     {
       "ep": 0,
@@ -1071,6 +1071,35 @@
           "start": 0.09,
           "end": 8.77,
           "text": "*Upbeat Music*"
+        }
+      ]
+    },
+    {
+      "ep": 51,
+      "date": "2026-09-26",
+      "shortcode": "DdvugeQztIE",
+      "title": "If you have five different goals right now and genuinely can't figure out which to focus on, then I don't actually think.",
+      "duration_s": 65.3,
+      "key_message": "If you have five different goals right now and genuinely can't figure out which to focus on, then I don't actually think you have a clarity problem. I think you might have a commitment problem.",
+      "quote": "So if you have five goals and can't decide, stop asking what is the perfect choice and ask, which one am I willing to give a real chance that I want to prioritize right now?",
+      "tag": "action",
+      "reflection": "What's one messy action you can take today to apply this: So if you have five goals and can't decide, stop asking what is the perfect choice and ask, which one am I willing to give a real chance that I want to prioritize right now?",
+      "transcript": "If you have five different goals right now and genuinely can't figure out which to focus on, then I don't actually think you have a clarity problem. I think you might have a commitment problem. Because you're probably trying to figure out which one is the right one, which has the most potential, which one's going to work out the fastest. Which one will I still want six months from now? And what if I choose this one and I realize I should have chosen that one? And so you keep all five options open, which feels safer, but it also means none of them ever get enough full attention long enough for you to find out what could have happened. I think we massively overestimate how important it is to choose the perfect goal and underestimate how powerful it can be to choose a good goal and stay with it. You can change your mind later. You can pursue another thing. You can pivot. And you can have it all eventually, but if you keep switching every time that another idea feels exciting, then you're constantly going to reset the clock. So if you have five goals and can't decide, stop asking what is the perfect choice and ask, which one am I willing to give a real chance that I want to prioritize right now? And then stay long enough to find out.",
+      "segments": [
+        {
+          "start": 0,
+          "end": 15.78,
+          "text": "If you have five different goals right now and genuinely can't figure out which to focus on, then I don't actually think you have a clarity problem. I think you might have a commitment problem. Because you're probably trying to figure out which one is the right one, which has the most potential, which one's going to work out the fastest."
+        },
+        {
+          "start": 15.93,
+          "end": 43.25,
+          "text": "Which one will I still want six months from now? And what if I choose this one and I realize I should have chosen that one? And so you keep all five options open, which feels safer, but it also means none of them ever get enough full attention long enough for you to find out what could have happened. I think we massively overestimate how important it is to choose the perfect goal and underestimate how powerful it can be to choose a good goal and stay with it. You can change your mind later. You can pursue another thing. You can pivot."
+        },
+        {
+          "start": 45.93,
+          "end": 65.21,
+          "text": "And you can have it all eventually, but if you keep switching every time that another idea feels exciting, then you're constantly going to reset the clock. So if you have five goals and can't decide, stop asking what is the perfect choice and ask, which one am I willing to give a real chance that I want to prioritize right now? And then stay long enough to find out."
         }
       ]
     }
